@@ -12,11 +12,14 @@ import scenes.*;
 class Player extends Entity
 {
     public static inline var SPEED = 100;
-    public static inline var SHOT_COOLDOWN = 0.1;
+    public static inline var RAPID_COOLDOWN = 0.1;
+    public static inline var SCATTER_COOLDOWN = 1;
+    public static inline var SCATTER_COUNT = 10;
 
     private var sprite:Spritemap;
     private var velocity:Vector2;
-    private var shotCooldown:Alarm;
+    private var rapidCooldown:Alarm;
+    private var scatterCooldown:Alarm;
 
     public function new(x:Float, y:Float) {
         super(x, y);
@@ -26,8 +29,10 @@ class Player extends Entity
         sprite.play("idle");
         graphic = sprite;
         velocity = new Vector2();
-        shotCooldown = new Alarm(SHOT_COOLDOWN);
-        addTween(shotCooldown);
+        rapidCooldown = new Alarm(RAPID_COOLDOWN);
+        addTween(rapidCooldown);
+        scatterCooldown = new Alarm(SCATTER_COOLDOWN);
+        addTween(scatterCooldown);
     }
 
     override public function update() {
@@ -60,17 +65,20 @@ class Player extends Entity
     }
 
     private function combat() {
+        //if(Input.pressed("shoot") && !scatterCooldown.active) {
         if(Input.pressed("shoot")) {
             // Scatter shot
-            var nailCount = 10;
             var angle = Math.PI / 6;
-            for(i in 0...nailCount) {
+            var shotCount = SCATTER_COUNT;
+            if(scatterCooldown.active) {
+                shotCount = Std.int(Math.floor(SCATTER_COUNT * scatterCooldown.percent) / 2);
+            }
+            for(i in 0...shotCount) {
                 var angle = (
                     (sprite.flipX ? -Math.PI / 2: Math.PI / 2)
-                    + i * (angle / (nailCount - 1))
+                    + i * (angle / (shotCount - 1))
                     - angle / 2
                 );
-                trace(angle);
                 var nail = new Nail(
                     centerX, centerY,
                     {
@@ -80,9 +88,9 @@ class Player extends Entity
                 );
                 HXP.scene.add(nail);
             }
-            shotCooldown.start();
+            scatterCooldown.start();
         }
-        if(Input.check("shoot") && !shotCooldown.active) {
+        if(Input.check("shoot") && !rapidCooldown.active) {
             // Rapid fire
             var nail = new Nail(
                 centerX, centerY,
@@ -92,7 +100,8 @@ class Player extends Entity
                 }
             );
             HXP.scene.add(nail);
-            shotCooldown.start();
+            rapidCooldown.start();
+            scatterCooldown.start();
         }
     }
 }
