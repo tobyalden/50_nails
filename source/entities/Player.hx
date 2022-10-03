@@ -12,7 +12,7 @@ import scenes.*;
 class Player extends Entity
 {
     public static inline var SPEED = 100;
-    public static inline var SHOT_COOLDOWN = 0.25;
+    public static inline var SHOT_COOLDOWN = 0.1;
 
     private var sprite:Spritemap;
     private var velocity:Vector2;
@@ -60,19 +60,39 @@ class Player extends Entity
     }
 
     private function combat() {
+        if(Input.pressed("shoot")) {
+            // Scatter shot
+            var nailCount = 10;
+            var angle = Math.PI / 6;
+            for(i in 0...nailCount) {
+                var angle = (
+                    (sprite.flipX ? -Math.PI / 2: Math.PI / 2)
+                    + i * (angle / (nailCount - 1))
+                    - angle / 2
+                );
+                trace(angle);
+                var nail = new Nail(
+                    centerX, centerY,
+                    {
+                        angle: angle,
+                        speed: 500 + 200 * Math.random()
+                    }
+                );
+                HXP.scene.add(nail);
+            }
+            shotCooldown.start();
+        }
         if(Input.check("shoot") && !shotCooldown.active) {
+            // Rapid fire
             var nail = new Nail(
                 centerX, centerY,
                 {
-                    width: 5,
-                    height: 2,
                     angle: sprite.flipX ? -Math.PI / 2: Math.PI / 2,
                     speed: 500,
                 }
             );
             HXP.scene.add(nail);
             shotCooldown.start();
-            //ammo -= 1;
         }
     }
 }

@@ -10,13 +10,8 @@ import haxepunk.utils.*;
 import scenes.*;
 
 typedef NailOptions = {
-    var width:Int;
-    var height:Int;
     var angle:Float;
     var speed:Float;
-    @:optional var callback:Nail->Void;
-    @:optional var callbackDelay:Float;
-    @:optional var color:Int;
 }
 
 class Nail extends Entity
@@ -32,29 +27,19 @@ class Nail extends Entity
     public var spinSpeed:Float;
 
     public function new(x:Float, y:Float, nailOptions:NailOptions) {
-        super(x - nailOptions.width / 2, y - nailOptions.height / 2);
+        super(x - 4, y - 2);
         layer = 10;
         this.nailOptions = nailOptions;
         type = "nail";
         this.angle = nailOptions.angle - Math.PI / 2;
         this.speed = nailOptions.speed;
         mask = new Hitbox(2, 2);
-        var color = nailOptions.color == null ? 0xFFFFFF : nailOptions.color;
         sprite = new Image("graphics/nail.png");
         sprite.centerOrigin();
         sprite.x = 3 - 2;
         sprite.y = 1;
-        sprite.color = color;
         graphic = sprite;
         velocity = new Vector2();
-        var callbackDelay = (
-            nailOptions.callbackDelay == null ? 0 : nailOptions.callbackDelay
-        );
-        if(nailOptions.callback != null) {
-            addTween(new Alarm(callbackDelay, function() {
-                nailOptions.callback(this);
-            }), true);
-        }
         hasCollided = false;
         spinSpeed = 0;
     }
