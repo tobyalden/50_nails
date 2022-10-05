@@ -44,7 +44,7 @@ class Nail extends Entity
         this.angle = angle;
         sprite.x = 1;
         sprite.y = 1;
-        sprite.angle = angle * 180 / Math.PI;
+        sprite.angle = angle * -180 / Math.PI;
         hasFired = true;
     }
 

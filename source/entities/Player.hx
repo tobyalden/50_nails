@@ -12,19 +12,21 @@ import scenes.*;
 class Player extends Entity
 {
     public static inline var SPEED = 100;
-    public static inline var RAPID_COOLDOWN = 0.1;
-    public static inline var SCATTER_COOLDOWN = 1;
-    public static inline var SCATTER_COUNT = 10;
+    public static inline var SCATTER_COOLDOWN = 0.5;
+    public static inline var SCATTER_COUNT = 8;
+    public static inline var RAPID_COOLDOWN = SCATTER_COOLDOWN / SCATTER_COUNT;
 
     public var nails(default, null):Array<Nail>;
     private var sprite:Spritemap;
     private var velocity:Vector2;
     private var rapidCooldown:Alarm;
     private var scatterCooldown:Alarm;
+    private var shotBuffered:Bool;
     private var age:Float;
 
     public function new(x:Float, y:Float) {
         super(x, y);
+        nails = [for (i in 0...50) new Nail()];
         mask = new Hitbox(10, 10);
         sprite = new Spritemap("graphics/player.png", 10, 10);
         sprite.add("idle", [0]);
@@ -35,7 +37,7 @@ class Player extends Entity
         addTween(rapidCooldown);
         scatterCooldown = new Alarm(SCATTER_COOLDOWN);
         addTween(scatterCooldown);
-        nails = [for (i in 0...50) new Nail()];
+        shotBuffered = false;
         age = 0;
     }
 
@@ -89,17 +91,30 @@ class Player extends Entity
         }
         velocity = heading;
         velocity.normalize(SPEED);
-        moveBy(velocity.x * HXP.elapsed, velocity.y * HXP.elapsed, ["walls"]);
+        moveBy(
+            velocity.x * HXP.elapsed,
+            velocity.y * HXP.elapsed,
+            ["walls"]
+        );
     }
 
+
     private function combat() {
-        if(Input.pressed("shoot")) {
+        if(
+            Main.tapped("shoot", 5)
+            && scatterCooldown.active
+            && scatterCooldown.percent > 0.7
+        ) {
+            shotBuffered = true;
+        }
+        if(
+            (Main.tapped("shoot", 5) || shotBuffered)
+            && !scatterCooldown.active
+        )
+         {
             // Scatter shot
             var angle = Math.PI / 6;
             var shotCount = SCATTER_COUNT;
-            if(scatterCooldown.active) {
-                shotCount = Std.int(Math.floor(SCATTER_COUNT * scatterCooldown.percent) / 2);
-            }
             for(i in 0...shotCount) {
                 var angle = (
                     (sprite.flipX ? -Math.PI: 0)
@@ -109,13 +124,13 @@ class Player extends Entity
                 fireNail(500, angle);
             }
             scatterCooldown.start();
+            shotBuffered = false;
         }
-        if(Input.check("shoot") && !rapidCooldown.active) {
+        if(Main.held("shoot", 6) && !rapidCooldown.active) {
             // Rapid fire
             var angle = sprite.flipX ? -Math.PI: 0;
             fireNail(500, angle);
             rapidCooldown.start();
-            scatterCooldown.start();
         }
     }
 

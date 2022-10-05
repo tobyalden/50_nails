@@ -8,9 +8,41 @@ import haxepunk.utils.*;
 import openfl.Lib;
 import scenes.*;
 
-
 class Main extends Engine
 {
+    public static inline var INPUT_BUFFER_SIZE = 10;
+
+    private static var inputBuffer:Map<String, Array<Bool>>;
+
+    static public function held(input:String, duration:Int) {
+        var wasHeld = true;
+        for(i in 0...duration) {
+            if(!inputBuffer[input][i]) {
+                wasHeld = false;
+                break;
+            }
+        }
+        return Input.check(input) && wasHeld;
+    }
+
+    static public function tapped(input:String, buffer:Int) {
+        var wasTap = false;
+        for(i in 1...(buffer + 2)) {
+            if(!inputBuffer[input][i]) {
+                wasTap = true;
+                break;
+            }
+        }
+        var returnVal = Input.released(input) && inputBuffer[input][0] == true && wasTap;
+        if(returnVal) {
+            trace('Input.released(input): ${Input.released(input)}');
+            trace('inputBuffer[input]: ${inputBuffer[input]}');
+            trace('wasTap: ${wasTap}');
+            trace('\n');
+        }
+        return Input.released(input) && inputBuffer[input][0] == true && wasTap;
+    }
+
     static function main() {
         new Main();
     }
@@ -27,6 +59,10 @@ class Main extends Engine
         Key.define("left", [Key.A, Key.LEFT]);
         Key.define("right", [Key.D, Key.RIGHT]);
         Key.define("shoot", [Key.X]);
+
+        inputBuffer = [
+            "shoot" => [for (i in 0...INPUT_BUFFER_SIZE) false],
+        ];
 
         if(Gamepad.gamepad(0) != null) {
             defineGamepadInputs(Gamepad.gamepad(0));
@@ -57,5 +93,10 @@ class Main extends Engine
         }
 #end
         super.update();
+
+        for(input in inputBuffer.keys()) {
+            inputBuffer[input].insert(0, Input.check(input));
+            inputBuffer[input].pop();
+        }
     }
 }
