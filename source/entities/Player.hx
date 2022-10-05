@@ -16,11 +16,12 @@ class Player extends Entity
     public static inline var SCATTER_COOLDOWN = 1;
     public static inline var SCATTER_COUNT = 10;
 
+    public var nails(default, null):Array<Nail>;
     private var sprite:Spritemap;
     private var velocity:Vector2;
     private var rapidCooldown:Alarm;
     private var scatterCooldown:Alarm;
-    public var nails(default, null):Array<Nail>;
+    private var age:Float;
 
     public function new(x:Float, y:Float) {
         super(x, y);
@@ -35,12 +36,32 @@ class Player extends Entity
         scatterCooldown = new Alarm(SCATTER_COOLDOWN);
         addTween(scatterCooldown);
         nails = [for (i in 0...50) new Nail()];
+        age = 0;
     }
 
     override public function update() {
         movement();
         combat();
         collisions();
+        var nailCount = 0;
+        for(nail in nails) {
+            if(nail.hasFired) {
+                continue;
+            }
+            nail.moveTo(centerX, centerY);
+            var revolveSpeed = 2;
+            var nailSeparation = MathUtil.lerp(2, 0, nailCount / nails.length);
+            nail.sprite.x = Math.cos((age + nailSeparation) * revolveSpeed) * 20;
+            nail.sprite.y = Math.sin((age + nailSeparation) * 2 * revolveSpeed) * 10;
+            if(nail.sprite.x > 15) {
+                nail.layer = -10;
+            }
+            else if(nail.sprite.x < -15) {
+                nail.layer = 10;
+            }
+            nailCount++;
+        }
+        age += HXP.elapsed;
         super.update();
     }
 

@@ -15,8 +15,8 @@ class Nail extends Entity
 
     public var hasFired(default, null):Bool;
     public var hasCollided(default, null):Bool;
+    public var sprite:Image;
     private var velocity:Vector2;
-    private var sprite:Image;
     private var angle:Float;
     private var speed:Float;
     private var spinSpeed:Float;
@@ -30,50 +30,51 @@ class Nail extends Entity
         mask = new Hitbox(2, 2);
         sprite = new Image("graphics/nail.png");
         sprite.centerOrigin();
-        sprite.x = 3 - 2;
+        sprite.x = 1;
         sprite.y = 1;
         graphic = sprite;
         velocity = new Vector2();
-        hasFired = false;
-        hasCollided = false;
         spinSpeed = 0;
+        collect();
     }
 
     public function fire(position:Vector2, speed:Float, angle:Float) {
         moveTo(position.x, position.y);
         this.speed = speed;
         this.angle = angle;
+        sprite.x = 1;
+        sprite.y = 1;
+        sprite.angle = angle * 180 / Math.PI;
         hasFired = true;
     }
 
     public function collect() {
         hasFired = false;
         hasCollided = false;
-        sprite.angle = 0;
+        sprite.angle = -90;
+        sprite.alpha = 0.5;
     }
 
     override public function update() {
-        visible = hasFired;
         collidable = hasFired;
-        if(!hasFired) {
-            return;
-        }
-        if(hasCollided) {
-            if(velocity.length < 10) {
-                velocity.x = 0;
-                velocity.y = 0;
+        if(hasFired) {
+            if(hasCollided) {
+                if(velocity.length < 10) {
+                    velocity.x = 0;
+                    velocity.y = 0;
+                }
+                else {
+                    sprite.angle += spinSpeed;
+                    velocity.y += GRAVITY * HXP.elapsed;
+                }
             }
             else {
-                sprite.angle += spinSpeed;
-                velocity.y += GRAVITY * HXP.elapsed;
+                velocity.x = Math.cos(angle);
+                velocity.y = Math.sin(angle);
+                velocity.normalize(speed);
             }
+            moveBy(velocity.x * HXP.elapsed, velocity.y * HXP.elapsed, "walls");
         }
-        else {
-            velocity.x = Math.cos(angle);
-            velocity.y = Math.sin(angle);
-            velocity.normalize(speed);
-        }
-        moveBy(velocity.x * HXP.elapsed, velocity.y * HXP.elapsed, "walls");
         super.update();
     }
 
@@ -93,7 +94,7 @@ class Nail extends Entity
 
     public function onCollision() {
         if(!hasCollided) {
-            HXP.tween(sprite, {"alpha": 0.75}, 1);
+            HXP.tween(sprite, {"alpha": 0.5}, 1);
         }
         hasCollided = true;
         spinSpeed = 10 + Math.random() * 20;
