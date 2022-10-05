@@ -13,6 +13,7 @@ class Main extends Engine
     public static inline var INPUT_BUFFER_SIZE = 10;
 
     private static var inputBuffer:Map<String, Array<Bool>>;
+    private static var timeHeld:Map<String, Float>;
 
     static public function held(input:String, duration:Int) {
         var wasHeld = true;
@@ -25,6 +26,10 @@ class Main extends Engine
         return Input.check(input) && wasHeld;
     }
 
+    static public function getTimeHeld(input:String) {
+        return timeHeld[input];
+    }
+
     static public function tapped(input:String, buffer:Int) {
         var wasTap = false;
         for(i in 1...(buffer + 2)) {
@@ -32,13 +37,6 @@ class Main extends Engine
                 wasTap = true;
                 break;
             }
-        }
-        var returnVal = Input.released(input) && inputBuffer[input][0] == true && wasTap;
-        if(returnVal) {
-            trace('Input.released(input): ${Input.released(input)}');
-            trace('inputBuffer[input]: ${inputBuffer[input]}');
-            trace('wasTap: ${wasTap}');
-            trace('\n');
         }
         return Input.released(input) && inputBuffer[input][0] == true && wasTap;
     }
@@ -59,9 +57,13 @@ class Main extends Engine
         Key.define("left", [Key.A, Key.LEFT]);
         Key.define("right", [Key.D, Key.RIGHT]);
         Key.define("shoot", [Key.X]);
+        Key.define("collect", [Key.C]);
 
         inputBuffer = [
             "shoot" => [for (i in 0...INPUT_BUFFER_SIZE) false],
+        ];
+        timeHeld = [
+            "collect" => 0,
         ];
 
         if(Gamepad.gamepad(0) != null) {
@@ -97,6 +99,14 @@ class Main extends Engine
         for(input in inputBuffer.keys()) {
             inputBuffer[input].insert(0, Input.check(input));
             inputBuffer[input].pop();
+        }
+        for(input in timeHeld.keys()) {
+            if(Input.check(input)) {
+                timeHeld[input] += HXP.elapsed;
+            }
+            else {
+                timeHeld[input] = 0;
+            }
         }
     }
 }
