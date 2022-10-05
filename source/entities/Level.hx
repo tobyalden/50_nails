@@ -44,7 +44,11 @@ class Level extends Entity
                 for(entityIndex in 0...layer.entities.length) {
                     var entity = layer.entities[entityIndex];
                     if(entity.name == "player") {
-                        entities.push(new Player(entity.x, entity.y));
+                        var player = new Player(entity.x, entity.y);
+                        entities.push(player);
+                        for(nail in player.nails) {
+                            entities.push(nail);
+                        }
                     }
                 }
             }

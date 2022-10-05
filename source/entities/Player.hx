@@ -20,6 +20,7 @@ class Player extends Entity
     private var velocity:Vector2;
     private var rapidCooldown:Alarm;
     private var scatterCooldown:Alarm;
+    public var nails(default, null):Array<Nail>;
 
     public function new(x:Float, y:Float) {
         super(x, y);
@@ -33,10 +34,17 @@ class Player extends Entity
         addTween(rapidCooldown);
         scatterCooldown = new Alarm(SCATTER_COOLDOWN);
         addTween(scatterCooldown);
+        nails = [for (i in 0...50) new Nail()];
     }
 
     override public function update() {
+        movement();
         combat();
+        collisions();
+        super.update();
+    }
+
+    private function movement() {
         var heading = new Vector2();
         if(Input.check("left")) {
             heading.x = -1;
@@ -61,11 +69,9 @@ class Player extends Entity
         velocity = heading;
         velocity.normalize(SPEED);
         moveBy(velocity.x * HXP.elapsed, velocity.y * HXP.elapsed, ["walls"]);
-        super.update();
     }
 
     private function combat() {
-        //if(Input.pressed("shoot") && !scatterCooldown.active) {
         if(Input.pressed("shoot")) {
             // Scatter shot
             var angle = Math.PI / 6;
@@ -75,33 +81,44 @@ class Player extends Entity
             }
             for(i in 0...shotCount) {
                 var angle = (
-                    (sprite.flipX ? -Math.PI / 2: Math.PI / 2)
+                    (sprite.flipX ? -Math.PI: 0)
                     + i * (angle / (shotCount - 1))
                     - angle / 2
                 );
-                var nail = new Nail(
-                    centerX, centerY,
-                    {
-                        angle: angle,
-                        speed: 500 + 200 * Math.random()
-                    }
-                );
-                HXP.scene.add(nail);
+                fireNail(500, angle);
             }
             scatterCooldown.start();
         }
         if(Input.check("shoot") && !rapidCooldown.active) {
             // Rapid fire
-            var nail = new Nail(
-                centerX, centerY,
-                {
-                    angle: sprite.flipX ? -Math.PI / 2: Math.PI / 2,
-                    speed: 500,
-                }
-            );
-            HXP.scene.add(nail);
+            var angle = sprite.flipX ? -Math.PI: 0;
+            fireNail(500, angle);
             rapidCooldown.start();
             scatterCooldown.start();
+        }
+    }
+
+    private function fireNail(speed:Float, angle:Float) {
+        for(nail in nails) {
+            if(!nail.hasFired) {
+                nail.fire(
+                    new Vector2(centerX - 4, centerY - 2),
+                    speed,
+                    angle
+                );
+                break;
+            }
+        }
+    }
+
+    private function collisions() {
+        var nails = [];
+        collideInto("nail", x, y, nails);
+        for(_nail in nails) {
+            var nail = cast(_nail, Nail);
+            if(nail.hasFired && nail.hasCollided) {
+                nail.collect();
+            }
         }
     }
 }
